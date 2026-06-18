@@ -61,6 +61,8 @@ input:focus,select:focus,textarea:focus{border-color:var(--green);box-shadow:0 0
 .btn-primary:hover{opacity:.88;background:var(--text);}
 .btn-export{border-color:var(--green);color:var(--green);font-weight:500;}
 .btn-export:hover{background:var(--green-bg);}
+.btn-danger{border-color:var(--red);color:var(--red);font-weight:500;}
+.btn-danger:hover{background:var(--red-bg);}
 .table-wrap{overflow-x:auto;}
 table{width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed;}
 thead th{text-align:left;padding:10px 12px;color:var(--text2);font-weight:500;border-bottom:0.5px solid var(--border);font-size:11px;text-transform:uppercase;letter-spacing:.03em;}
@@ -73,7 +75,6 @@ tbody td{padding:9px 12px;overflow:hidden;text-overflow:ellipsis;white-space:now
 .b-warn{background:var(--amber-bg);color:var(--amber-text);}
 .b-err{background:var(--red-bg);color:var(--red-text);}
 .b-off{background:var(--gray-bg);color:var(--gray-text);}
-.b-blue{background:var(--blue-bg);color:var(--blue-text);}
 .row-actions{display:flex;gap:4px;align-items:center;}
 .ic-btn{background:none;border:none;cursor:pointer;color:var(--text2);font-size:16px;padding:4px;border-radius:6px;line-height:1;transition:background .1s,color .1s;}
 .ic-btn:hover{background:var(--bg2);color:var(--text);}
@@ -81,7 +82,7 @@ tbody td{padding:9px 12px;overflow:hidden;text-overflow:ellipsis;white-space:now
 .ic-btn.ret:hover{background:var(--green-bg);}
 .ic-btn.dev{color:var(--amber);}
 .ic-btn.dev:hover{background:var(--amber-bg);}
-.ic-btn.danger:hover{color:var(--red);}
+.ic-btn.danger:hover{color:var(--red);background:var(--red-bg);}
 .empty{text-align:center;padding:3rem;color:var(--text2);font-size:13px;}
 .section-hidden{display:none;}
 .modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:200;align-items:center;justify-content:center;padding:1rem;}
@@ -102,10 +103,8 @@ tbody td{padding:9px 12px;overflow:hidden;text-overflow:ellipsis;white-space:now
 .info-box strong{color:var(--text);}
 .toast{position:fixed;bottom:1.5rem;right:1.5rem;background:var(--green);color:var(--green-bg);border-radius:var(--radius);padding:10px 18px;font-size:13px;font-weight:500;z-index:300;opacity:0;transform:translateY(8px);transition:opacity .25s,transform .25s;pointer-events:none;}
 .toast.show{opacity:1;transform:translateY(0);}
-/* col equip */
 .t-equip th:nth-child(1){width:24%}.t-equip th:nth-child(2){width:11%}.t-equip th:nth-child(3){width:11%}.t-equip th:nth-child(4){width:10%}.t-equip th:nth-child(5){width:13%}.t-equip th:nth-child(6){width:11%}.t-equip th:nth-child(7){width:11%}.t-equip th:nth-child(8){width:9%}
-/* col hist */
-.t-hist th:nth-child(1){width:14%}.t-hist th:nth-child(2){width:10%}.t-hist th:nth-child(3){width:22%}.t-hist th:nth-child(4){width:10%}.t-hist th:nth-child(5){width:15%}.t-hist th:nth-child(6){width:15%}.t-hist th:nth-child(7){width:14%}
+.t-hist th:nth-child(1){width:13%}.t-hist th:nth-child(2){width:10%}.t-hist th:nth-child(3){width:21%}.t-hist th:nth-child(4){width:10%}.t-hist th:nth-child(5){width:14%}.t-hist th:nth-child(6){width:14%}.t-hist th:nth-child(7){width:13%}.t-hist th:nth-child(8){width:5%}
 @media(max-width:600px){header{padding:0 1rem;}main{padding:1rem;}.row2{grid-template-columns:1fr;}}
 </style>
 </head>
@@ -179,12 +178,13 @@ tbody td{padding:9px 12px;overflow:hidden;text-overflow:ellipsis;white-space:now
           <option value="Retirada">Apenas retiradas</option>
           <option value="Devolução">Apenas devoluções</option>
         </select>
+        <button class="btn btn-danger" onclick="limparHistorico()"><i class="ti ti-trash"></i> Limpar tudo</button>
       </div>
       <div class="table-wrap">
         <table class="t-hist">
           <thead><tr>
             <th>Data / Hora</th><th>Tipo</th><th>Equipamento</th><th>Patrimônio</th>
-            <th>Responsável</th><th>Local / Destino</th><th>Condição / Obs</th>
+            <th>Responsável</th><th>Local / Destino</th><th>Condição / Obs</th><th></th>
           </tr></thead>
           <tbody id="histbody"></tbody>
         </table>
@@ -272,7 +272,7 @@ tbody td{padding:9px 12px;overflow:hidden;text-overflow:ellipsis;white-space:now
 <div class="toast" id="toast"></div>
 
 <script>
-const SK_EQ="equip_obra_v3", SK_HI="equip_hist_v3";
+const SK_EQ="equip_obra_v3",SK_HI="equip_hist_v3";
 let data=JSON.parse(localStorage.getItem(SK_EQ)||"null")||[
   {id:1,nome:"Escavadeira hidráulica 20t",tipo:"Escavação",status:"Em uso",patrimonio:"EQ-0001",responsavel:"Carlos Menezes",local:"Fundação - Bloco A",manut:"2025-08-15",obs:"",retirada:"2025-06-10",previsao:"2025-07-10",devolucao:""},
   {id:2,nome:"Caminhão basculante 10m³",tipo:"Transporte",status:"Em uso",patrimonio:"EQ-0002",responsavel:"Rogério Lima",local:"Acesso principal",manut:"2025-07-30",obs:"",retirada:"2025-06-12",previsao:"2025-07-12",devolucao:""},
@@ -355,7 +355,7 @@ function renderHist(){
   const ht=document.getElementById("hTipo").value;
   const filtered=[...historico].reverse().filter(h=>(h.equipNome+h.responsavel+h.patrimonio).toLowerCase().includes(q)&&(!ht||h.tipo===ht));
   const tbody=document.getElementById("histbody");
-  if(!filtered.length){tbody.innerHTML=`<tr><td colspan="7" class="empty"><i class="ti ti-history" style="font-size:24px;display:block;margin:0 auto 8px;"></i>Nenhuma movimentação registrada</td></tr>`;return;}
+  if(!filtered.length){tbody.innerHTML=`<tr><td colspan="8" class="empty"><i class="ti ti-history" style="font-size:24px;display:block;margin:0 auto 8px;"></i>Nenhuma movimentação registrada</td></tr>`;return;}
   tbody.innerHTML=filtered.map(h=>`<tr>
     <td>${h.data?fmt(h.data)+" "+h.hora:"—"}</td>
     <td>${h.tipo==="Retirada"?`<span class="badge b-ok">↗ Retirada</span>`:`<span class="badge b-warn">↙ Devolução</span>`}</td>
@@ -364,7 +364,21 @@ function renderHist(){
     <td>${h.responsavel||"—"}</td>
     <td>${h.local||"—"}</td>
     <td>${h.condicao||h.obs||"—"}</td>
+    <td><button class="ic-btn danger" title="Deletar registro" onclick="deleteHist(${h.id})"><i class="ti ti-trash"></i></button></td>
   </tr>`).join("");
+}
+
+function deleteHist(id){
+  if(confirm("Deletar este registro do histórico?")){
+    historico=historico.filter(h=>h.id!==id);
+    persist();renderHist();showToast("Registro removido do histórico");
+  }
+}
+
+function limparHistorico(){
+  if(confirm("Tem certeza que deseja limpar TODO o histórico de movimentações? Esta ação não pode ser desfeita.")){
+    historico=[];persist();renderHist();showToast("Histórico limpo com sucesso");
+  }
 }
 
 function openModal(prefill){
@@ -433,9 +447,7 @@ function saveDev(){
   persist();closeDev();render();showToast(novoStatus==="Disponível"?"✓ Devolvido — disponível no estoque":"✓ Devolvido — enviado para manutenção");
 }
 
-function exportAtual(){
-  if(abaAtual==="equip")exportEquip();else exportHist();
-}
+function exportAtual(){if(abaAtual==="equip")exportEquip();else exportHist();}
 
 function exportEquip(){
   const rows=getFiltered();
