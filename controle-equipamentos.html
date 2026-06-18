@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Controle de Equipamentos de Obra</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #ffffff;
+    --bg2: #f5f4f0;
+    --bg3: #eeede8;
+    --text: #1a1a18;
+    --text2: #6b6a65;
+    --text3: #9b9a96;
+    --border: rgba(0,0,0,0.12);
+    --border2: rgba(0,0,0,0.22);
+    --radius: 8px;
+    --radius-lg: 12px;
+    --green: #0F6E56;
+    --green-bg: #E1F5EE;
+    --green-text: #085041;
+    --amber: #854F0B;
+    --amber-bg: #FAEEDA;
+    --amber-text: #633806;
+    --red: #A32D2D;
+    --red-bg: #FCEBEB;
+    --red-text: #791F1F;
+    --gray-bg: #F1EFE8;
+    --gray-text: #5F5E5A;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1e1e1c;
+      --bg2: #2a2a27;
+      --bg3: #333330;
+      --text: #f0efe9;
+      --text2: #a09f9a;
+      --text3: #6b6a65;
+      --border: rgba(255,255,255,0.10);
+      --border2: rgba(255,255,255,0.18);
+      --green: #5DCAA5;
+      --green-bg: #04342C;
+      --green-text: #9FE1CB;
+      --amber: #EF9F27;
+      --amber-bg: #412402;
+      --amber-text: #FAC775;
+      --red: #F09595;
+      --red-bg: #501313;
+      --red-text: #F7C1C1;
+      --gray-bg: #2C2C2A;
+      --gray-text: #B4B2A9;
+    }
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg3);
+    color: var(--text);
+    font-size: 15px;
+    line-height: 1.5;
+    min-height: 100vh;
+  }
+
+  header {
+    background: var(--bg);
+    border-bottom: 0.5px solid var(--border);
+    padding: 0 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 56px;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+  }
+
+  .header-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--text);
+  }
+
+  .header-brand i { font-size: 20px; color: var(--green); }
+
+  .header-actions { display: flex; gap: 8px; }
+
+  main { max-width: 1100px; margin: 0 auto; padding: 1.5rem; }
+
+  .metrics {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    gap: 10px;
+    margin-bottom: 1.5rem;
+  }
+
+  .metric {
+    background: var(--bg);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    border: 0.5px solid var(--border);
+  }
+
+  .metric .lbl { font-size: 12px; color: var(--text2); margin-bottom: 4px; }
+  .metric .val { font-size: 26px; font-weight: 500; }
+  .metric .val.ok  { color: var(--green); }
+  .metric .val.warn { color: var(--amber); }
+  .metric .val.err  { color: var(--red); }
+
+  .card {
+    background: var(--bg);
+    border-radius: var(--radius-lg);
+    border: 0.5px solid var(--border);
+    overflow: hidden;
+  }
+
+  .card-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 16px;
+    border-bottom: 0.5px solid var(--border);
+    flex-wrap: wrap;
+  }
+
+  .search-wrap {
+    position: relative;
+    flex: 1;
+    min-width: 180px;
+  }
+
+  .search-wrap i {
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text3);
+    font-size: 16px;
+    pointer-events: none;
+  }
+
+  .search-wrap input {
+    width: 100%;
+    padding: 7px 10px 7px 34px;
+  }
+
+  input, select, textarea {
+    border: 0.5px solid var(--border2);
+    border-radius: var(--radius);
+    background: var(--bg);
+    color: var(--text);
+    font-size: 13px;
+    padding: 7px 10px;
+    font-family: inherit;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+
+  input:focus, select:focus, textarea:focus {
+    border-color: var(--green);
+    box-shadow: 0 0 0 3px rgba(29,158,117,0.12);
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 14px;
+    font-size: 13px;
+    border-radius: var(--radius);
+    border: 0.5px solid var(--border2);
+    background: var(--bg);
+    color: var(--text);
+    cursor: pointer;
+    font-family: inherit;
+    transition: background 0.15s;
+    white-space: nowrap;
+  }
+
+  .btn:hover { background: var(--bg2); }
+
+  .btn-primary {
+    background: var(--text);
+    color: var(--bg);
+    border-color: var(--text);
+    font-weight: 500;
+  }
+
+  .btn-primary:hover { opacity: 0.88; background: var(--text); }
+
+  .btn-export {
+    border-color: var(--green);
+    color: var(--green);
+    font-weight: 500;
+  }
+
+  .btn-export:hover { background: var(--green-bg); }
+
+  .table-wrap { overflow-x: auto; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    table-layout: fixed;
+  }
+
+  thead th {
+    text-align: left;
+    padding: 10px 14px;
+    color: var(--text2);
+    font-weight: 500;
+    border-bottom: 0.5px solid var(--border);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+
+  tbody tr { border-bottom: 0.5px solid var(--border); transition: background 0.1s; }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: var(--bg2); }
+  tbody td { padding: 10px 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  th:nth-child(1){width:26%;}
+  th:nth-child(2){width:13%;}
+  th:nth-child(3){width:13%;}
+  th:nth-child(4){width:12%;}
+  th:nth-child(5){width:16%;}
+  th:nth-child(6){width:12%;}
+  th:nth-child(7){width:8%;}
+
+  .badge {
+    display: inline-block;
+    border-radius: var(--radius);
+    padding: 2px 9px;
+    font-size: 11px;
+    font-weight: 500;
+  }
+
+  .b-ok   { background: var(--green-bg); color: var(--green-text); }
+  .b-warn { background: var(--amber-bg); color: var(--amber-text); }
+  .b-err  { background: var(--red-bg);   color: var(--red-text); }
+  .b-off  { background: var(--gray-bg);  color: var(--gray-text); }
+
+  .row-actions { display: flex; gap: 4px; }
+
+  .ic-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text2);
+    font-size: 16px;
+    padding: 4px;
+    border-radius: 6px;
+    line-height: 1;
+    transition: background 0.1s, color 0.1s;
+  }
+
+  .ic-btn:hover { background: var(--bg2); color: var(--text); }
+  .ic-btn.danger:hover { color: var(--red); }
+
+  .empty {
+    text-align: center;
+    padding: 3rem;
+    color: var(--text2);
+    font-size: 13px;
+  }
+
+  /* Modal */
+  .modal-bg {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.4);
+    z-index: 200;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+  }
+
+  .modal-bg.open { display: flex; }
+
+  .modal {
+    background: var(--bg);
+    border-radius: var(--radius-lg);
+    border: 0.5px solid var(--border2);
+    padding: 1.5rem;
+    width: min(460px, 100%);
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+
+  .modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.25rem;
+  }
+
+  .modal-header h3 { font-size: 16px; font-weight: 500; }
+
+  .field { margin-bottom: 12px; }
+  .field label { display: block; font-size: 12px; color: var(--text2); margin-bottom: 4px; }
+  .field input, .field select, .field textarea { width: 100%; }
+  .field textarea { resize: vertical; }
+
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+  .modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 1.25rem;
+  }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    bottom: 1.5rem;
+    right: 1.5rem;
+    background: var(--green);
+    color: #E1F5EE;
+    border-radius: var(--radius);
+    padding: 10px 18px;
+    font-size: 13px;
+    font-weight: 500;
+    z-index: 300;
+    opacity: 0;
+    transform: translateY(8px);
+    transition: opacity 0.25s, transform 0.25s;
+    pointer-events: none;
+  }
+
+  .toast.show { opacity: 1; transform: translateY(0); }
+
+  @media (max-width: 600px) {
+    header { padding: 0 1rem; }
+    main { padding: 1rem; }
+    .row2 { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-brand">
+    <i class="ti ti-bulldozer"></i>
+    Equipamentos de obra
+  </div>
+  <div class="header-actions">
+    <button class="btn btn-export" onclick="exportXLSX()">
+      <i class="ti ti-file-spreadsheet"></i> Exportar planilha
+    </button>
+    <button class="btn btn-primary" onclick="openModal()">
+      <i class="ti ti-plus"></i> Novo equipamento
+    </button>
+  </div>
+</header>
+
+<main>
+  <div class="metrics" id="metrics"></div>
+
+  <div class="card">
+    <div class="card-toolbar">
+      <div class="search-wrap">
+        <i class="ti ti-search"></i>
+        <input type="text" id="search" placeholder="Buscar equipamento ou responsável..." oninput="render()">
+      </div>
+      <select id="fStatus" onchange="render()">
+        <option value="">Todos os status</option>
+        <option value="Disponível">Disponível</option>
+        <option value="Em uso">Em uso</option>
+        <option value="Manutenção">Manutenção</option>
+        <option value="Inativo">Inativo</option>
+      </select>
+      <select id="fType" onchange="render()">
+        <option value="">Todos os tipos</option>
+        <option value="Escavação">Escavação</option>
+        <option value="Transporte">Transporte</option>
+        <option value="Içamento">Içamento</option>
+        <option value="Compactação">Compactação</option>
+        <option value="Elétrico">Elétrico</option>
+        <option value="Outros">Outros</option>
+      </select>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Equipamento</th>
+            <th>Tipo</th>
+            <th>Status</th>
+            <th>Nº patrimônio</th>
+            <th>Responsável</th>
+            <th>Próx. manutenção</th>
+            <th>Ações</th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+  </div>
+</main>
+
+<!-- Modal -->
+<div class="modal-bg" id="modalBg">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="modalTitle">Novo equipamento</h3>
+      <button class="ic-btn" onclick="closeModal()"><i class="ti ti-x"></i></button>
+    </div>
+    <div class="field">
+      <label>Nome do equipamento</label>
+      <input id="fNome" placeholder="Ex: Escavadeira hidráulica">
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label>Tipo</label>
+        <select id="fTipo">
+          <option>Escavação</option><option>Transporte</option><option>Içamento</option>
+          <option>Compactação</option><option>Elétrico</option><option>Outros</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Status</label>
+        <select id="fStat">
+          <option>Disponível</option><option>Em uso</option><option>Manutenção</option><option>Inativo</option>
+        </select>
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label>Nº patrimônio</label>
+        <input id="fPatrimonio" placeholder="Ex: EQ-0042">
+      </div>
+      <div class="field">
+        <label>Responsável</label>
+        <input id="fResponsavel" placeholder="Nome do responsável">
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label>Localização na obra</label>
+        <input id="fLocal" placeholder="Ex: Bloco A, Térreo">
+      </div>
+      <div class="field">
+        <label>Próxima manutenção</label>
+        <input id="fManut" type="date">
+      </div>
+    </div>
+    <div class="field">
+      <label>Observações</label>
+      <textarea id="fObs" rows="2" placeholder="Informações adicionais..."></textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="save()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const STORAGE_KEY = "equipamentos_obra_v1";
+
+let data = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null") || [
+  {id:1,nome:"Escavadeira hidráulica 20t",tipo:"Escavação",status:"Em uso",patrimonio:"EQ-0001",responsavel:"Carlos Menezes",local:"Fundação - Bloco A",manut:"2025-08-15",obs:""},
+  {id:2,nome:"Caminhão basculante 10m³",tipo:"Transporte",status:"Em uso",patrimonio:"EQ-0002",responsavel:"Rogério Lima",local:"Acesso principal",manut:"2025-07-30",obs:""},
+  {id:3,nome:"Guindaste de torre 40m",tipo:"Içamento",status:"Disponível",patrimonio:"EQ-0003",responsavel:"Fábio Alves",local:"Centro do canteiro",manut:"2025-09-10",obs:""},
+  {id:4,nome:"Rolo compactador vibratório",tipo:"Compactação",status:"Manutenção",patrimonio:"EQ-0004",responsavel:"Oficina central",local:"—",manut:"2025-07-05",obs:"Troca de rolamento"},
+  {id:5,nome:"Gerador 150 kVA",tipo:"Elétrico",status:"Disponível",patrimonio:"EQ-0005",responsavel:"Elton Souza",local:"Entrada da obra",manut:"2025-08-01",obs:""},
+  {id:6,nome:"Retroescavadeira",tipo:"Escavação",status:"Disponível",patrimonio:"EQ-0006",responsavel:"Márcio Pereira",local:"Terraplanagem - Lote 2",manut:"2025-09-20",obs:""},
+  {id:7,nome:"Betoneira 600L",tipo:"Outros",status:"Inativo",patrimonio:"EQ-0007",responsavel:"—",local:"Depósito",manut:"",obs:"Aguardando reforma"},
+];
+
+let editId = null;
+
+function persist() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+}
+
+function showToast(msg) {
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  setTimeout(() => t.classList.remove("show"), 2800);
+}
+
+function getFiltered() {
+  const q = document.getElementById("search").value.toLowerCase();
+  const fs = document.getElementById("fStatus").value;
+  const ft = document.getElementById("fType").value;
+  return data.filter(d => {
+    const m = (d.nome + d.responsavel + d.patrimonio + d.local).toLowerCase().includes(q);
+    return m && (!fs || d.status === fs) && (!ft || d.tipo === ft);
+  });
+}
+
+function statusBadge(s) {
+  if (s === "Disponível") return `<span class="badge b-ok">${s}</span>`;
+  if (s === "Em uso")     return `<span class="badge b-warn">${s}</span>`;
+  if (s === "Manutenção") return `<span class="badge b-err">${s}</span>`;
+  return `<span class="badge b-off">${s}</span>`;
+}
+
+function fmtDate(str) {
+  if (!str) return "—";
+  const [y, m, d] = str.split("-");
+  return `${d}/${m}/${y}`;
+}
+
+function metrics() {
+  const tot  = data.length;
+  const disp = data.filter(d => d.status === "Disponível").length;
+  const uso  = data.filter(d => d.status === "Em uso").length;
+  const mnt  = data.filter(d => d.status === "Manutenção").length;
+  document.getElementById("metrics").innerHTML = `
+    <div class="metric"><div class="lbl">Total de equipamentos</div><div class="val">${tot}</div></div>
+    <div class="metric"><div class="lbl">Disponíveis</div><div class="val ok">${disp}</div></div>
+    <div class="metric"><div class="lbl">Em uso</div><div class="val warn">${uso}</div></div>
+    <div class="metric"><div class="lbl">Em manutenção</div><div class="val err">${mnt}</div></div>
+  `;
+}
+
+function render() {
+  const filtered = getFiltered();
+  const tbody = document.getElementById("tbody");
+  metrics();
+  if (!filtered.length) {
+    tbody.innerHTML = `<tr><td colspan="7" class="empty"><i class="ti ti-mood-empty" style="font-size:24px;display:block;margin:0 auto 8px;"></i>Nenhum equipamento encontrado</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = filtered.map(d => `
+    <tr>
+      <td title="${d.nome}">${d.nome}</td>
+      <td>${d.tipo}</td>
+      <td>${statusBadge(d.status)}</td>
+      <td>${d.patrimonio || "—"}</td>
+      <td title="${d.responsavel}">${d.responsavel || "—"}</td>
+      <td>${fmtDate(d.manut)}</td>
+      <td>
+        <div class="row-actions">
+          <button class="ic-btn" title="Editar" onclick="edit(${d.id})"><i class="ti ti-edit"></i></button>
+          <button class="ic-btn danger" title="Remover" onclick="remove(${d.id})"><i class="ti ti-trash"></i></button>
+        </div>
+      </td>
+    </tr>
+  `).join("");
+}
+
+function openModal(prefill) {
+  editId = prefill ? prefill.id : null;
+  document.getElementById("modalTitle").textContent = editId ? "Editar equipamento" : "Novo equipamento";
+  document.getElementById("fNome").value       = prefill?.nome || "";
+  document.getElementById("fTipo").value       = prefill?.tipo || "Escavação";
+  document.getElementById("fStat").value       = prefill?.status || "Disponível";
+  document.getElementById("fPatrimonio").value = prefill?.patrimonio || "";
+  document.getElementById("fResponsavel").value= prefill?.responsavel || "";
+  document.getElementById("fLocal").value      = prefill?.local || "";
+  document.getElementById("fManut").value      = prefill?.manut || "";
+  document.getElementById("fObs").value        = prefill?.obs || "";
+  document.getElementById("modalBg").classList.add("open");
+  setTimeout(() => document.getElementById("fNome").focus(), 50);
+}
+
+function closeModal() {
+  document.getElementById("modalBg").classList.remove("open");
+}
+
+function save() {
+  const nome = document.getElementById("fNome").value.trim();
+  if (!nome) { alert("Informe o nome do equipamento."); return; }
+  const obj = {
+    id: editId || Date.now(),
+    nome,
+    tipo:        document.getElementById("fTipo").value,
+    status:      document.getElementById("fStat").value,
+    patrimonio:  document.getElementById("fPatrimonio").value.trim(),
+    responsavel: document.getElementById("fResponsavel").value.trim(),
+    local:       document.getElementById("fLocal").value.trim(),
+    manut:       document.getElementById("fManut").value,
+    obs:         document.getElementById("fObs").value.trim(),
+  };
+  if (editId) data = data.map(d => d.id === editId ? obj : d);
+  else data.push(obj);
+  persist();
+  closeModal();
+  render();
+  showToast(editId ? "✓ Equipamento atualizado" : "✓ Equipamento cadastrado");
+}
+
+function edit(id) { openModal(data.find(d => d.id === id)); }
+
+function remove(id) {
+  if (confirm("Remover este equipamento?")) {
+    data = data.filter(d => d.id !== id);
+    persist();
+    render();
+    showToast("Equipamento removido");
+  }
+}
+
+function exportXLSX() {
+  const rows = getFiltered();
+  const hoje = new Date().toLocaleDateString("pt-BR");
+  const wsData = [
+    ["CONTROLE DE EQUIPAMENTOS DE OBRA"],
+    [`Gerado em: ${hoje}`],
+    [],
+    ["Equipamento","Tipo","Status","Nº Patrimônio","Responsável","Localização","Próx. Manutenção","Observações"],
+    ...rows.map(d => [
+      d.nome, d.tipo, d.status,
+      d.patrimonio || "—",
+      d.responsavel || "—",
+      d.local || "—",
+      fmtDate(d.manut),
+      d.obs || ""
+    ]),
+    [],
+    ["Resumo"],
+    ["Total de equipamentos", rows.length],
+    ["Disponíveis",    rows.filter(d => d.status === "Disponível").length],
+    ["Em uso",         rows.filter(d => d.status === "Em uso").length],
+    ["Em manutenção",  rows.filter(d => d.status === "Manutenção").length],
+    ["Inativos",       rows.filter(d => d.status === "Inativo").length],
+  ];
+
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.aoa_to_sheet(wsData);
+  ws["!cols"] = [
+    {wch:32},{wch:14},{wch:14},{wch:14},{wch:20},{wch:22},{wch:18},{wch:28}
+  ];
+  ws["!merges"] = [{s:{r:0,c:0},e:{r:0,c:7}}];
+  XLSX.utils.book_append_sheet(wb, ws, "Equipamentos");
+  XLSX.writeFile(wb, `equipamentos_obra_${hoje.replace(/\//g,"-")}.xlsx`);
+  showToast("✓ Planilha exportada com sucesso!");
+}
+
+document.getElementById("modalBg").addEventListener("click", e => {
+  if (e.target === document.getElementById("modalBg")) closeModal();
+});
+
+document.addEventListener("keydown", e => {
+  if (e.key === "Escape") closeModal();
+});
+
+render();
+</script>
+</body>
+</html>
