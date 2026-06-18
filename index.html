@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Controle de Equipamentos de Obra</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#ffffff;--bg2:#f5f4f0;--bg3:#eeede8;
+  --text:#1a1a18;--text2:#6b6a65;--text3:#9b9a96;
+  --border:rgba(0,0,0,0.12);--border2:rgba(0,0,0,0.22);
+  --radius:8px;--radius-lg:12px;
+  --green:#0F6E56;--green-bg:#E1F5EE;--green-text:#085041;
+  --amber:#854F0B;--amber-bg:#FAEEDA;--amber-text:#633806;
+  --red:#A32D2D;--red-bg:#FCEBEB;--red-text:#791F1F;
+  --gray-bg:#F1EFE8;--gray-text:#5F5E5A;
+  --blue-bg:#E6F1FB;--blue-text:#0C447C;
+}
+@media(prefers-color-scheme:dark){
+  :root{
+    --bg:#1e1e1c;--bg2:#2a2a27;--bg3:#333330;
+    --text:#f0efe9;--text2:#a09f9a;--text3:#6b6a65;
+    --border:rgba(255,255,255,0.10);--border2:rgba(255,255,255,0.18);
+    --green:#5DCAA5;--green-bg:#04342C;--green-text:#9FE1CB;
+    --amber:#EF9F27;--amber-bg:#412402;--amber-text:#FAC775;
+    --red:#F09595;--red-bg:#501313;--red-text:#F7C1C1;
+    --gray-bg:#2C2C2A;--gray-text:#B4B2A9;
+    --blue-bg:#042C53;--blue-text:#B5D4F4;
+  }
+}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg3);color:var(--text);font-size:15px;line-height:1.5;min-height:100vh;}
+header{background:var(--bg);border-bottom:0.5px solid var(--border);padding:0 2rem;display:flex;align-items:center;justify-content:space-between;height:56px;position:sticky;top:0;z-index:50;gap:8px;flex-wrap:wrap;}
+.header-brand{display:flex;align-items:center;gap:10px;font-size:16px;font-weight:500;}
+.header-brand i{font-size:20px;color:var(--green);}
+.header-actions{display:flex;gap:8px;}
+main{max-width:1200px;margin:0 auto;padding:1.5rem;}
+.tabs{display:flex;border-bottom:0.5px solid var(--border);margin-bottom:1.5rem;}
+.tab{padding:10px 20px;font-size:14px;cursor:pointer;color:var(--text2);border-bottom:2px solid transparent;margin-bottom:-0.5px;transition:color .15s;display:flex;align-items:center;gap:6px;}
+.tab:hover{color:var(--text);}
+.tab.active{color:var(--green);border-bottom-color:var(--green);font-weight:500;}
+.metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:1.5rem;}
+.metric{background:var(--bg);border-radius:var(--radius);padding:14px 16px;border:0.5px solid var(--border);}
+.metric .lbl{font-size:12px;color:var(--text2);margin-bottom:4px;}
+.metric .val{font-size:26px;font-weight:500;}
+.metric .val.ok{color:var(--green);}
+.metric .val.warn{color:var(--amber);}
+.metric .val.err{color:var(--red);}
+.card{background:var(--bg);border-radius:var(--radius-lg);border:0.5px solid var(--border);overflow:hidden;}
+.toolbar{display:flex;align-items:center;gap:8px;padding:12px 16px;border-bottom:0.5px solid var(--border);flex-wrap:wrap;}
+.search-wrap{position:relative;flex:1;min-width:180px;}
+.search-wrap i{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:16px;pointer-events:none;}
+.search-wrap input{width:100%;padding:7px 10px 7px 34px;}
+input,select,textarea{border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg);color:var(--text);font-size:13px;padding:7px 10px;font-family:inherit;outline:none;transition:border-color .15s;}
+input:focus,select:focus,textarea:focus{border-color:var(--green);box-shadow:0 0 0 3px rgba(29,158,117,.12);}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;font-size:13px;border-radius:var(--radius);border:0.5px solid var(--border2);background:var(--bg);color:var(--text);cursor:pointer;font-family:inherit;white-space:nowrap;transition:background .15s;}
+.btn:hover{background:var(--bg2);}
+.btn-primary{background:var(--text);color:var(--bg);border-color:var(--text);font-weight:500;}
+.btn-primary:hover{opacity:.88;background:var(--text);}
+.btn-export{border-color:var(--green);color:var(--green);font-weight:500;}
+.btn-export:hover{background:var(--green-bg);}
+.btn-danger{border-color:var(--red);color:var(--red);font-weight:500;}
+.btn-danger:hover{background:var(--red-bg);}
+.table-wrap{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed;}
+thead th{text-align:left;padding:10px 12px;color:var(--text2);font-weight:500;border-bottom:0.5px solid var(--border);font-size:11px;text-transform:uppercase;letter-spacing:.03em;}
+tbody tr{border-bottom:0.5px solid var(--border);transition:background .1s;}
+tbody tr:last-child{border-bottom:none;}
+tbody tr:hover{background:var(--bg2);}
+tbody td{padding:9px 12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.badge{display:inline-block;border-radius:var(--radius);padding:2px 9px;font-size:11px;font-weight:500;}
+.b-ok{background:var(--green-bg);color:var(--green-text);}
+.b-warn{background:var(--amber-bg);color:var(--amber-text);}
+.b-err{background:var(--red-bg);color:var(--red-text);}
+.b-off{background:var(--gray-bg);color:var(--gray-text);}
+.b-blue{background:var(--blue-bg);color:var(--blue-text);}
+.qty-badge{display:inline-flex;align-items:center;gap:4px;background:var(--blue-bg);color:var(--blue-text);border-radius:var(--radius);padding:2px 8px;font-size:11px;font-weight:500;}
+.qty-badge.low{background:var(--amber-bg);color:var(--amber-text);}
+.qty-badge.zero{background:var(--red-bg);color:var(--red-text);}
+.row-actions{display:flex;gap:4px;align-items:center;}
+.ic-btn{background:none;border:none;cursor:pointer;color:var(--text2);font-size:16px;padding:4px;border-radius:6px;line-height:1;transition:background .1s,color .1s;}
+.ic-btn:hover{background:var(--bg2);color:var(--text);}
+.ic-btn.ret{color:var(--green);}
+.ic-btn.ret:hover{background:var(--green-bg);}
+.ic-btn.dev{color:var(--amber);}
+.ic-btn.dev:hover{background:var(--amber-bg);}
+.ic-btn.danger:hover{color:var(--red);background:var(--red-bg);}
+.empty{text-align:center;padding:3rem;color:var(--text2);font-size:13px;}
+.section-hidden{display:none;}
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:200;align-items:center;justify-content:center;padding:1rem;}
+.modal-bg.open{display:flex;}
+.modal{background:var(--bg);border-radius:var(--radius-lg);border:0.5px solid var(--border2);padding:1.5rem;width:min(480px,100%);max-height:90vh;overflow-y:auto;}
+.modal-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;}
+.modal-hdr h3{font-size:16px;font-weight:500;}
+.field{margin-bottom:12px;}
+.field label{display:block;font-size:12px;color:var(--text2);margin-bottom:4px;}
+.field input,.field select,.field textarea{width:100%;}
+.field textarea{resize:vertical;}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;}
+.modal-footer{display:flex;justify-content:flex-end;gap:8px;margin-top:1.25rem;}
+.btn-cancel{background:none;border:0.5px solid var(--border2);border-radius:var(--radius);padding:7px 16px;font-size:13px;cursor:pointer;color:var(--text);}
+.btn-save{background:var(--text);color:var(--bg);border:none;border-radius:var(--radius);padding:7px 16px;font-size:13px;cursor:pointer;font-weight:500;}
+.btn-cancel:hover{background:var(--bg2);}
+.info-box{background:var(--bg2);border-radius:var(--radius);border:0.5px solid var(--border);padding:10px 14px;font-size:12px;color:var(--text2);margin-bottom:12px;}
+.info-box strong{color:var(--text);}
+.estoque-info{display:flex;align-items:center;gap:8px;margin-top:6px;font-size:12px;color:var(--text2);}
+.estoque-info b{color:var(--text);}
+.toast{position:fixed;bottom:1.5rem;right:1.5rem;background:var(--green);color:var(--green-bg);border-radius:var(--radius);padding:10px 18px;font-size:13px;font-weight:500;z-index:300;opacity:0;transform:translateY(8px);transition:opacity .25s,transform .25s;pointer-events:none;}
+.toast.show{opacity:1;transform:translateY(0);}
+.t-equip th:nth-child(1){width:22%}.t-equip th:nth-child(2){width:10%}.t-equip th:nth-child(3){width:10%}.t-equip th:nth-child(4){width:9%}.t-equip th:nth-child(5){width:8%}.t-equip th:nth-child(6){width:8%}.t-equip th:nth-child(7){width:12%}.t-equip th:nth-child(8){width:11%}.t-equip th:nth-child(9){width:10%}
+.t-hist th:nth-child(1){width:12%}.t-hist th:nth-child(2){width:9%}.t-hist th:nth-child(3){width:20%}.t-hist th:nth-child(4){width:8%}.t-hist th:nth-child(5){width:7%}.t-hist th:nth-child(6){width:13%}.t-hist th:nth-child(7){width:14%}.t-hist th:nth-child(8){width:12%}.t-hist th:nth-child(9){width:5%}
+@media(max-width:600px){header{padding:0 1rem;}main{padding:1rem;}.row2,.row3{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-brand">
+    <i class="ti ti-bulldozer"></i>
+    Equipamentos de obra
+  </div>
+  <div class="header-actions">
+    <button class="btn btn-export" id="btnExport" onclick="exportAtual()"><i class="ti ti-file-spreadsheet"></i> Exportar planilha</button>
+    <button class="btn btn-primary" id="btnNovo" onclick="openModal()"><i class="ti ti-plus"></i> Novo equipamento</button>
+  </div>
+</header>
+
+<main>
+  <div class="tabs">
+    <div class="tab active" onclick="showTab('equip')"><i class="ti ti-list"></i> Equipamentos</div>
+    <div class="tab" onclick="showTab('hist')"><i class="ti ti-history"></i> Histórico de movimentações</div>
+  </div>
+
+  <!-- ABA EQUIPAMENTOS -->
+  <div id="secEquip">
+    <div class="metrics" id="metrics"></div>
+    <div class="card">
+      <div class="toolbar">
+        <div class="search-wrap">
+          <i class="ti ti-search"></i>
+          <input type="text" id="search" placeholder="Buscar equipamento ou responsável..." oninput="render()">
+        </div>
+        <select id="fStatus" onchange="render()">
+          <option value="">Todos os status</option>
+          <option value="Disponível">Disponível</option>
+          <option value="Em uso">Em uso</option>
+          <option value="Manutenção">Manutenção</option>
+          <option value="Inativo">Inativo</option>
+        </select>
+        <select id="fType" onchange="render()">
+          <option value="">Todos os tipos</option>
+          <option value="Escavação">Escavação</option>
+          <option value="Transporte">Transporte</option>
+          <option value="Içamento">Içamento</option>
+          <option value="Compactação">Compactação</option>
+          <option value="Elétrico">Elétrico</option>
+          <option value="Outros">Outros</option>
+        </select>
+      </div>
+      <div class="table-wrap">
+        <table class="t-equip">
+          <thead><tr>
+            <th>Equipamento</th><th>Tipo</th><th>Status</th><th>Patrimônio</th>
+            <th>Qtd total</th><th>Disponível</th><th>Responsável</th><th>Retirada</th><th>Ações</th>
+          </tr></thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ABA HISTÓRICO -->
+  <div id="secHist" class="section-hidden">
+    <div class="card">
+      <div class="toolbar">
+        <div class="search-wrap">
+          <i class="ti ti-search"></i>
+          <input type="text" id="hsearch" placeholder="Buscar equipamento ou responsável..." oninput="renderHist()">
+        </div>
+        <select id="hTipo" onchange="renderHist()">
+          <option value="">Retiradas e devoluções</option>
+          <option value="Retirada">Apenas retiradas</option>
+          <option value="Devolução">Apenas devoluções</option>
+        </select>
+        <button class="btn btn-danger" onclick="limparHistorico()"><i class="ti ti-trash"></i> Limpar tudo</button>
+      </div>
+      <div class="table-wrap">
+        <table class="t-hist">
+          <thead><tr>
+            <th>Data / Hora</th><th>Tipo</th><th>Equipamento</th><th>Patrimônio</th>
+            <th>Qtd</th><th>Responsável</th><th>Local / Destino</th><th>Condição / Obs</th><th></th>
+          </tr></thead>
+          <tbody id="histbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- Modal cadastro -->
+<div class="modal-bg" id="modalBg">
+<div class="modal">
+  <div class="modal-hdr">
+    <h3 id="modalTitle">Novo equipamento</h3>
+    <button class="ic-btn" onclick="closeModal()"><i class="ti ti-x"></i></button>
+  </div>
+  <div class="field"><label>Nome do equipamento</label><input id="fNome" placeholder="Ex: Escavadeira hidráulica"></div>
+  <div class="row2">
+    <div class="field"><label>Tipo</label>
+      <select id="fTipo"><option>Escavação</option><option>Transporte</option><option>Içamento</option><option>Compactação</option><option>Elétrico</option><option>Outros</option></select>
+    </div>
+    <div class="field"><label>Status</label>
+      <select id="fStat"><option>Disponível</option><option>Em uso</option><option>Manutenção</option><option>Inativo</option></select>
+    </div>
+  </div>
+  <div class="row3">
+    <div class="field"><label>Nº patrimônio</label><input id="fPatrimonio" placeholder="Ex: EQ-0042"></div>
+    <div class="field"><label>Quantidade total</label><input id="fQtdTotal" type="number" min="1" value="1" placeholder="1"></div>
+    <div class="field"><label>Qtd disponível</label><input id="fQtdDisp" type="number" min="0" value="1" placeholder="1"></div>
+  </div>
+  <div class="row2">
+    <div class="field"><label>Responsável</label><input id="fResponsavel" placeholder="Nome do responsável"></div>
+    <div class="field"><label>Localização</label><input id="fLocal" placeholder="Ex: Bloco A, Térreo"></div>
+  </div>
+  <div class="row2">
+    <div class="field"><label>Próxima manutenção</label><input id="fManut" type="date"></div>
+    <div class="field"><label>Observações</label><input id="fObs" placeholder="Informações adicionais..."></div>
+  </div>
+  <div class="modal-footer">
+    <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
+    <button class="btn-save" onclick="save()">Salvar</button>
+  </div>
+</div>
+</div>
+
+<!-- Modal retirada -->
+<div class="modal-bg" id="modalRet">
+<div class="modal">
+  <div class="modal-hdr">
+    <h3><i class="ti ti-arrow-up-right" style="color:var(--green);margin-right:6px;vertical-align:-2px;"></i>Registrar retirada</h3>
+    <button class="ic-btn" onclick="closeRet()"><i class="ti ti-x"></i></button>
+  </div>
+  <div class="info-box" id="retInfo"></div>
+  <div class="row2">
+    <div class="field"><label>Data de retirada</label><input id="rData" type="date"></div>
+    <div class="field"><label>Quantidade retirada</label><input id="rQtd" type="number" min="1" value="1" placeholder="1"></div>
+  </div>
+  <div class="field"><label>Responsável pela retirada</label><input id="rResponsavel" placeholder="Nome do responsável"></div>
+  <div class="field"><label>Destino / Localização na obra</label><input id="rLocal" placeholder="Ex: Bloco B, 3º andar"></div>
+  <div class="field"><label>Previsão de devolução</label><input id="rPrevisao" type="date"></div>
+  <div class="field"><label>Observações</label><textarea id="rObs" rows="2" placeholder="Observações sobre a retirada..."></textarea></div>
+  <div class="modal-footer">
+    <button class="btn-cancel" onclick="closeRet()">Cancelar</button>
+    <button class="btn-save" onclick="saveRet()">Confirmar retirada</button>
+  </div>
+</div>
+</div>
+
+<!-- Modal devolução -->
+<div class="modal-bg" id="modalDev">
+<div class="modal">
+  <div class="modal-hdr">
+    <h3><i class="ti ti-arrow-down-left" style="color:var(--amber);margin-right:6px;vertical-align:-2px;"></i>Registrar devolução</h3>
+    <button class="ic-btn" onclick="closeDev()"><i class="ti ti-x"></i></button>
+  </div>
+  <div class="info-box" id="devInfo"></div>
+  <div class="row2">
+    <div class="field"><label>Data de devolução</label><input id="dData" type="date"></div>
+    <div class="field"><label>Quantidade devolvida</label><input id="dQtd" type="number" min="1" value="1" placeholder="1"></div>
+  </div>
+  <div class="field"><label>Condição ao devolver</label>
+    <select id="dCondicao"><option>Bom estado</option><option>Com defeito</option><option>Necessita manutenção</option></select>
+  </div>
+  <div class="field"><label>Observações</label><textarea id="dObs" rows="2" placeholder="Observações sobre a devolução..."></textarea></div>
+  <div class="modal-footer">
+    <button class="btn-cancel" onclick="closeDev()">Cancelar</button>
+    <button class="btn-save" onclick="saveDev()">Confirmar devolução</button>
+  </div>
+</div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SK_EQ="equip_obra_v4",SK_HI="equip_hist_v4";
+let data=JSON.parse(localStorage.getItem(SK_EQ)||"null")||[
+  {id:1,nome:"Escavadeira hidráulica 20t",tipo:"Escavação",status:"Em uso",patrimonio:"EQ-0001",qtdTotal:1,qtdDisp:0,responsavel:"Carlos Menezes",local:"Fundação - Bloco A",manut:"2025-08-15",obs:"",retirada:"2025-06-10",previsao:"2025-07-10",devolucao:""},
+  {id:2,nome:"Caminhão basculante 10m³",tipo:"Transporte",status:"Em uso",patrimonio:"EQ-0002",qtdTotal:2,qtdDisp:1,responsavel:"Rogério Lima",local:"Acesso principal",manut:"2025-07-30",obs:"",retirada:"2025-06-12",previsao:"2025-07-12",devolucao:""},
+  {id:3,nome:"Guindaste de torre 40m",tipo:"Içamento",status:"Disponível",patrimonio:"EQ-0003",qtdTotal:1,qtdDisp:1,responsavel:"",local:"",manut:"2025-09-10",obs:"",retirada:"",previsao:"",devolucao:""},
+  {id:4,nome:"Rolo compactador vibratório",tipo:"Compactação",status:"Manutenção",patrimonio:"EQ-0004",qtdTotal:2,qtdDisp:0,responsavel:"Oficina central",local:"",manut:"2025-07-05",obs:"Troca de rolamento",retirada:"",previsao:"",devolucao:""},
+  {id:5,nome:"Gerador 150 kVA",tipo:"Elétrico",status:"Disponível",patrimonio:"EQ-0005",qtdTotal:3,qtdDisp:3,responsavel:"",local:"",manut:"2025-08-01",obs:"",retirada:"",previsao:"",devolucao:""},
+  {id:6,nome:"Retroescavadeira",tipo:"Escavação",status:"Disponível",patrimonio:"EQ-0006",qtdTotal:1,qtdDisp:1,responsavel:"",local:"",manut:"2025-09-20",obs:"",retirada:"",previsao:"",devolucao:""},
+  {id:7,nome:"Betoneira 600L",tipo:"Outros",status:"Inativo",patrimonio:"EQ-0007",qtdTotal:4,qtdDisp:4,responsavel:"",local:"Depósito",manut:"",obs:"Aguardando reforma",retirada:"",previsao:"",devolucao:""},
+];
+let historico=JSON.parse(localStorage.getItem(SK_HI)||"null")||[
+  {id:1,tipo:"Retirada",equipId:1,equipNome:"Escavadeira hidráulica 20t",patrimonio:"EQ-0001",qtd:1,responsavel:"Carlos Menezes",local:"Fundação - Bloco A",data:"2025-06-10",hora:"08:00",condicao:"",obs:"Início da fundação bloco A"},
+  {id:2,tipo:"Retirada",equipId:2,equipNome:"Caminhão basculante 10m³",patrimonio:"EQ-0002",qtd:1,responsavel:"Rogério Lima",local:"Acesso principal",data:"2025-06-12",hora:"07:30",condicao:"",obs:""},
+];
+
+let editId=null,retId=null,devId=null,abaAtual="equip";
+const persist=()=>{localStorage.setItem(SK_EQ,JSON.stringify(data));localStorage.setItem(SK_HI,JSON.stringify(historico));};
+const fmt=s=>{if(!s||s==="—")return"—";const[y,m,d]=s.split("-");return`${d}/${m}/${y}`;};
+const today=()=>new Date().toISOString().split("T")[0];
+const nowHora=()=>new Date().toTimeString().slice(0,5);
+
+function showToast(msg){const t=document.getElementById("toast");t.textContent=msg;t.classList.add("show");setTimeout(()=>t.classList.remove("show"),2800);}
+
+function showTab(aba){
+  abaAtual=aba;
+  document.querySelectorAll(".tab").forEach((t,i)=>t.classList.toggle("active",(i===0&&aba==="equip")||(i===1&&aba==="hist")));
+  document.getElementById("secEquip").style.display=aba==="equip"?"block":"none";
+  document.getElementById("secHist").style.display=aba==="hist"?"block":"none";
+  document.getElementById("btnNovo").style.display=aba==="equip"?"inline-flex":"none";
+  if(aba==="hist")renderHist();
+}
+
+function qtyBadge(disp,total){
+  const pct=total>0?disp/total:0;
+  let cls="b-blue";
+  if(disp===0)cls="zero";else if(pct<=0.3)cls="low";
+  return`<span class="qty-badge ${cls}"><i class="ti ti-package" style="font-size:11px;"></i>${disp}/${total}</span>`;
+}
+
+const statusBadge=s=>{
+  if(s==="Disponível")return`<span class="badge b-ok">${s}</span>`;
+  if(s==="Em uso")return`<span class="badge b-warn">${s}</span>`;
+  if(s==="Manutenção")return`<span class="badge b-err">${s}</span>`;
+  return`<span class="badge b-off">${s}</span>`;
+};
+
+function calcStatus(d){
+  if(d.qtdDisp===0&&d.qtdTotal>0)return"Em uso";
+  if(d.qtdDisp===d.qtdTotal)return"Disponível";
+  return"Em uso";
+}
+
+function getFiltered(){
+  const q=document.getElementById("search").value.toLowerCase();
+  const fs=document.getElementById("fStatus").value;
+  const ft=document.getElementById("fType").value;
+  return data.filter(d=>(d.nome+d.responsavel+d.patrimonio).toLowerCase().includes(q)&&(!fs||d.status===fs)&&(!ft||d.tipo===ft));
+}
+
+function metrics(){
+  const tot=data.length;
+  const dispUnits=data.reduce((a,d)=>a+(d.qtdDisp||0),0);
+  const usoUnits=data.reduce((a,d)=>a+((d.qtdTotal||1)-(d.qtdDisp||0)),0);
+  const mnt=data.filter(d=>d.status==="Manutenção").length;
+  document.getElementById("metrics").innerHTML=`
+    <div class="metric"><div class="lbl">Total de equipamentos</div><div class="val">${tot}</div></div>
+    <div class="metric"><div class="lbl">Unidades disponíveis</div><div class="val ok">${dispUnits}</div></div>
+    <div class="metric"><div class="lbl">Unidades em uso</div><div class="val warn">${usoUnits}</div></div>
+    <div class="metric"><div class="lbl">Em manutenção</div><div class="val err">${mnt}</div></div>
+  `;
+}
+
+function render(){
+  metrics();
+  const filtered=getFiltered();
+  const tbody=document.getElementById("tbody");
+  if(!filtered.length){tbody.innerHTML=`<tr><td colspan="9" class="empty"><i class="ti ti-mood-empty" style="font-size:24px;display:block;margin:0 auto 8px;"></i>Nenhum equipamento encontrado</td></tr>`;return;}
+  tbody.innerHTML=filtered.map(d=>{
+    const podeRetirar=d.qtdDisp>0&&d.status!=="Inativo"&&d.status!=="Manutenção";
+    const podeDevolver=(d.qtdTotal-d.qtdDisp)>0;
+    return`<tr>
+      <td title="${d.nome}">${d.nome}</td>
+      <td>${d.tipo}</td>
+      <td>${statusBadge(d.status)}</td>
+      <td>${d.patrimonio||"—"}</td>
+      <td style="text-align:center;font-weight:500;">${d.qtdTotal||1}</td>
+      <td style="text-align:center;">${qtyBadge(d.qtdDisp,d.qtdTotal||1)}</td>
+      <td title="${d.responsavel||""}">${d.responsavel||"—"}</td>
+      <td>${fmt(d.retirada)}</td>
+      <td><div class="row-actions">
+        ${podeRetirar?`<button class="ic-btn ret" title="Registrar retirada" onclick="openRet(${d.id})"><i class="ti ti-arrow-up-right"></i></button>`:""}
+        ${podeDevolver?`<button class="ic-btn dev" title="Registrar devolução" onclick="openDev(${d.id})"><i class="ti ti-arrow-down-left"></i></button>`:""}
+        <button class="ic-btn" title="Editar" onclick="edit(${d.id})"><i class="ti ti-edit"></i></button>
+        <button class="ic-btn danger" title="Remover" onclick="remove(${d.id})"><i class="ti ti-trash"></i></button>
+      </div></td>
+    </tr>`;
+  }).join("");
+}
+
+function renderHist(){
+  const q=document.getElementById("hsearch").value.toLowerCase();
+  const ht=document.getElementById("hTipo").value;
+  const filtered=[...historico].reverse().filter(h=>(h.equipNome+h.responsavel+h.patrimonio).toLowerCase().includes(q)&&(!ht||h.tipo===ht));
+  const tbody=document.getElementById("histbody");
+  if(!filtered.length){tbody.innerHTML=`<tr><td colspan="9" class="empty"><i class="ti ti-history" style="font-size:24px;display:block;margin:0 auto 8px;"></i>Nenhuma movimentação registrada</td></tr>`;return;}
+  tbody.innerHTML=filtered.map(h=>`<tr>
+    <td>${h.data?fmt(h.data)+" "+h.hora:"—"}</td>
+    <td>${h.tipo==="Retirada"?`<span class="badge b-ok">↗ Retirada</span>`:`<span class="badge b-warn">↙ Devolução</span>`}</td>
+    <td title="${h.equipNome}">${h.equipNome}</td>
+    <td>${h.patrimonio||"—"}</td>
+    <td style="text-align:center;font-weight:500;">${h.qtd||1}</td>
+    <td>${h.responsavel||"—"}</td>
+    <td>${h.local||"—"}</td>
+    <td>${h.condicao||h.obs||"—"}</td>
+    <td><button class="ic-btn danger" title="Deletar registro" onclick="deleteHist(${h.id})"><i class="ti ti-trash"></i></button></td>
+  </tr>`).join("");
+}
+
+function deleteHist(id){
+  if(confirm("Deletar este registro do histórico?")){historico=historico.filter(h=>h.id!==id);persist();renderHist();showToast("Registro removido do histórico");}
+}
+function limparHistorico(){
+  if(confirm("Limpar TODO o histórico? Esta ação não pode ser desfeita.")){historico=[];persist();renderHist();showToast("Histórico limpo com sucesso");}
+}
+
+function openModal(prefill){
+  editId=prefill?prefill.id:null;
+  document.getElementById("modalTitle").textContent=editId?"Editar equipamento":"Novo equipamento";
+  document.getElementById("fNome").value=prefill?.nome||"";
+  document.getElementById("fTipo").value=prefill?.tipo||"Escavação";
+  document.getElementById("fStat").value=prefill?.status||"Disponível";
+  document.getElementById("fPatrimonio").value=prefill?.patrimonio||"";
+  document.getElementById("fQtdTotal").value=prefill?.qtdTotal||1;
+  document.getElementById("fQtdDisp").value=prefill?.qtdDisp??1;
+  document.getElementById("fResponsavel").value=prefill?.responsavel||"";
+  document.getElementById("fLocal").value=prefill?.local||"";
+  document.getElementById("fManut").value=prefill?.manut||"";
+  document.getElementById("fObs").value=prefill?.obs||"";
+  document.getElementById("modalBg").classList.add("open");
+}
+function closeModal(){document.getElementById("modalBg").classList.remove("open");}
+function save(){
+  const nome=document.getElementById("fNome").value.trim();
+  if(!nome){alert("Informe o nome do equipamento.");return;}
+  const qtdTotal=parseInt(document.getElementById("fQtdTotal").value)||1;
+  const qtdDisp=parseInt(document.getElementById("fQtdDisp").value)||0;
+  const prev=editId?data.find(d=>d.id===editId):{};
+  let status=document.getElementById("fStat").value;
+  if(qtdDisp===0&&status==="Disponível")status="Em uso";
+  if(qtdDisp===qtdTotal&&status==="Em uso")status="Disponível";
+  const obj={id:editId||Date.now(),nome,tipo:document.getElementById("fTipo").value,status,patrimonio:document.getElementById("fPatrimonio").value.trim(),qtdTotal,qtdDisp,responsavel:document.getElementById("fResponsavel").value.trim(),local:document.getElementById("fLocal").value.trim(),manut:document.getElementById("fManut").value,obs:document.getElementById("fObs").value.trim(),retirada:prev.retirada||"",devolucao:prev.devolucao||"",previsao:prev.previsao||""};
+  if(editId)data=data.map(d=>d.id===editId?obj:d);else data.push(obj);
+  persist();closeModal();render();showToast(editId?"✓ Equipamento atualizado":"✓ Equipamento cadastrado");
+}
+function edit(id){openModal(data.find(d=>d.id===id));}
+function remove(id){if(confirm("Remover este equipamento?")){data=data.filter(d=>d.id!==id);persist();render();showToast("Equipamento removido");}}
+
+function openRet(id){
+  retId=id;const d=data.find(x=>x.id===id);
+  document.getElementById("retInfo").innerHTML=`<strong>${d.nome}</strong> — ${d.patrimonio||"sem patrimônio"}<div class="estoque-info"><i class="ti ti-package" style="font-size:14px;"></i> Disponível: <b>${d.qtdDisp} de ${d.qtdTotal} unidade(s)</b></div>`;
+  document.getElementById("rData").value=today();
+  document.getElementById("rQtd").value=1;
+  document.getElementById("rQtd").max=d.qtdDisp;
+  document.getElementById("rResponsavel").value="";
+  document.getElementById("rLocal").value="";
+  document.getElementById("rPrevisao").value="";
+  document.getElementById("rObs").value="";
+  document.getElementById("modalRet").classList.add("open");
+}
+function closeRet(){document.getElementById("modalRet").classList.remove("open");}
+function saveRet(){
+  const resp=document.getElementById("rResponsavel").value.trim();
+  const dt=document.getElementById("rData").value;
+  const qtd=parseInt(document.getElementById("rQtd").value)||1;
+  if(!dt||!resp){alert("Informe a data e o responsável pela retirada.");return;}
+  const d=data.find(x=>x.id===retId);
+  if(qtd>d.qtdDisp){alert(`Quantidade inválida. Disponível: ${d.qtdDisp}`);return;}
+  const local=document.getElementById("rLocal").value.trim();
+  const obs=document.getElementById("rObs").value.trim();
+  const novaDisp=d.qtdDisp-qtd;
+  const novoStatus=novaDisp===0?"Em uso":"Em uso";
+  data=data.map(x=>x.id!==retId?x:{...x,status:novoStatus,qtdDisp:novaDisp,retirada:dt,responsavel:resp,local,previsao:document.getElementById("rPrevisao").value});
+  historico.push({id:Date.now(),tipo:"Retirada",equipId:retId,equipNome:d.nome,patrimonio:d.patrimonio,qtd,responsavel:resp,local,data:dt,hora:nowHora(),condicao:"",obs});
+  persist();closeRet();render();showToast(`✓ Retirada de ${qtd} unidade(s) registrada`);
+}
+
+function openDev(id){
+  devId=id;const d=data.find(x=>x.id===id);
+  const emUso=d.qtdTotal-d.qtdDisp;
+  document.getElementById("devInfo").innerHTML=`<strong>${d.nome}</strong> — retirado em ${fmt(d.retirada)}<div class="estoque-info"><i class="ti ti-package" style="font-size:14px;"></i> Em uso: <b>${emUso} unidade(s)</b></div>`;
+  document.getElementById("dData").value=today();
+  document.getElementById("dQtd").value=1;
+  document.getElementById("dQtd").max=emUso;
+  document.getElementById("dCondicao").value="Bom estado";
+  document.getElementById("dObs").value="";
+  document.getElementById("modalDev").classList.add("open");
+}
+function closeDev(){document.getElementById("modalDev").classList.remove("open");}
+function saveDev(){
+  const dt=document.getElementById("dData").value;
+  const qtd=parseInt(document.getElementById("dQtd").value)||1;
+  if(!dt){alert("Informe a data de devolução.");return;}
+  const cond=document.getElementById("dCondicao").value;
+  const obs=document.getElementById("dObs").value.trim();
+  const d=data.find(x=>x.id===devId);
+  const emUso=d.qtdTotal-d.qtdDisp;
+  if(qtd>emUso){alert(`Quantidade inválida. Em uso: ${emUso}`);return;}
+  const novaDisp=d.qtdDisp+qtd;
+  let novoStatus=novaDisp===d.qtdTotal?"Disponível":"Em uso";
+  if(cond!=="Bom estado")novoStatus="Manutenção";
+  historico.push({id:Date.now(),tipo:"Devolução",equipId:devId,equipNome:d.nome,patrimonio:d.patrimonio,qtd,responsavel:d.responsavel,local:d.local,data:dt,hora:nowHora(),condicao:cond,obs});
+  data=data.map(x=>x.id!==devId?x:{...x,status:novoStatus,qtdDisp:cond==="Bom estado"?novaDisp:d.qtdDisp,devolucao:dt});
+  persist();closeDev();render();showToast(`✓ Devolução de ${qtd} unidade(s) registrada`);
+}
+
+function exportAtual(){if(abaAtual==="equip")exportEquip();else exportHist();}
+function exportEquip(){
+  const rows=getFiltered();
+  const hoje=new Date().toLocaleDateString("pt-BR");
+  const wsData=[["CONTROLE DE EQUIPAMENTOS DE OBRA"],[`Gerado em: ${hoje}`],[],
+    ["Equipamento","Tipo","Status","Patrimônio","Qtd Total","Qtd Disponível","Qtd Em Uso","Responsável","Data Retirada","Localização","Observações"],
+    ...rows.map(d=>[d.nome,d.tipo,d.status,d.patrimonio||"—",d.qtdTotal||1,d.qtdDisp||0,(d.qtdTotal||1)-(d.qtdDisp||0),d.responsavel||"—",fmt(d.retirada),d.local||"—",d.obs||""]),
+    [],[["Resumo"]],
+    ["Total de equipamentos",rows.length],
+    ["Total unidades disponíveis",rows.reduce((a,d)=>a+(d.qtdDisp||0),0)],
+    ["Total unidades em uso",rows.reduce((a,d)=>a+((d.qtdTotal||1)-(d.qtdDisp||0)),0)],
+  ];
+  const wb=XLSX.utils.book_new();
+  const ws=XLSX.utils.aoa_to_sheet(wsData);
+  ws["!cols"]=[{wch:30},{wch:13},{wch:13},{wch:13},{wch:10},{wch:13},{wch:10},{wch:20},{wch:14},{wch:22},{wch:28}];
+  ws["!merges"]=[{s:{r:0,c:0},e:{r:0,c:10}}];
+  XLSX.utils.book_append_sheet(wb,ws,"Equipamentos");
+  XLSX.writeFile(wb,`equipamentos_${hoje.replace(/\//g,"-")}.xlsx`);
+  showToast("✓ Planilha exportada!");
+}
+function exportHist(){
+  const hoje=new Date().toLocaleDateString("pt-BR");
+  const wsData=[["HISTÓRICO DE MOVIMENTAÇÕES"],[`Gerado em: ${hoje}`],[],
+    ["Data","Hora","Tipo","Equipamento","Patrimônio","Quantidade","Responsável","Local / Destino","Condição","Observações"],
+    ...[...historico].reverse().map(h=>[fmt(h.data),h.hora,h.tipo,h.equipNome,h.patrimonio||"—",h.qtd||1,h.responsavel||"—",h.local||"—",h.condicao||"—",h.obs||""]),
+  ];
+  const wb=XLSX.utils.book_new();
+  const ws=XLSX.utils.aoa_to_sheet(wsData);
+  ws["!cols"]=[{wch:12},{wch:8},{wch:12},{wch:30},{wch:13},{wch:10},{wch:20},{wch:22},{wch:18},{wch:28}];
+  ws["!merges"]=[{s:{r:0,c:0},e:{r:0,c:9}}];
+  XLSX.utils.book_append_sheet(wb,ws,"Histórico");
+  XLSX.writeFile(wb,`historico_movimentacoes_${hoje.replace(/\//g,"-")}.xlsx`);
+  showToast("✓ Histórico exportado!");
+}
+
+document.querySelectorAll(".modal-bg").forEach(bg=>bg.addEventListener("click",e=>{if(e.target===bg)bg.classList.remove("open");}));
+document.addEventListener("keydown",e=>{if(e.key==="Escape")document.querySelectorAll(".modal-bg").forEach(b=>b.classList.remove("open"));});
+render();
+</script>
+</body>
+</html>
